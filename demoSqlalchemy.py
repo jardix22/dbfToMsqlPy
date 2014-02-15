@@ -10,6 +10,7 @@ class Collection(object):
     """docstring for Collection"""
     def __init__(self):
         super(Collection, self).__init__()
+        #self.model = model
 
     def connect_database(self):
         engine = create_engine('mysql+mysqldb://root:123123_@127.0.0.1:3306/detenidos_db?charset=utf8', echo = False)
@@ -17,20 +18,35 @@ class Collection(object):
         session  = Session()        
         return session
 
-
 class Offices(Collection):
     """docstring for Offices"""
     def __init__(self):
         super(Offices, self).__init__()
-        # self.arg = arg
+         # self.arg = arg
 
-    def is_exist(self, name):
+    def if_exist(self, name):
         session = self.connect_database()
         query = session.query(Office).filter(Office.name == name)
         query_exist = session.query(query.exists())
         session.close()
 
         return query_exist.scalar()
+
+    def insert_if_not_exist(arg):
+        if not(self.if_exist()):
+            try:
+                session = self.connect_database()
+                office = Office(name=arg.name, code=arg.code)
+                session.add(new_office)
+                session.commit()
+            except e
+                print "Office can't insert " + e
+
+            session.close()
+            return True
+        else:
+            print "Office: %s", arg.name
+            return False
 
 class Pakages(object):
     """docstring for Pakages"""
@@ -42,7 +58,7 @@ class Pakages(object):
         #session = self.connect_database()
 
         offices = Offices()
-        print offices.is_exist("Oficina Lima")
+        print offices.if_exist("Oficina Lima")
 
         #try:
         #    query = session.query(Office).filter(Office.code.in_(['010'])).one()
