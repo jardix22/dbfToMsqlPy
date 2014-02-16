@@ -4,31 +4,20 @@ from dbfpy import dbf
 # -- initialize --
 dbm = MySQLdb.connect(host="localhost", user="root", passwd="123123_", db="detenidos_db")
 cur = dbm.cursor()
-
 db = dbf.Dbf("ok.DBF")
-
-
-# -- Get offices --
-
 items = []
 i = 0
 
 for rec in db:
-	
+
 	#office = rec['RN_NOMBRE'].decode('Latin-1').encode('utf-8')
 	#procecutor = rec['MPF_NOMBRE'].decode('Latin-1').encode('utf-8')
 	#item = {}
-	
 	#item['office'] = rec['RN_NOMBRE']
 	#item['procecutor'] = rec['MPF_NOMBRE']
-
 	# items.append(item)
-	
+
 	# -- Save offices in the DB --
-		
-	
-	#else:
-	#	break
 
 	if rec['RN_NOMBRE'] != "OFICINA PUNO":
 		i = i + 1
@@ -58,33 +47,20 @@ for rec in db:
 		except Exception, e:
 			dbm.rollback()
 			print e
-	
-print "successfull add items"
-	
-#execute an sql query
-#for item in items:
-#print
 
+print "successfull add items"
 print "successfull"
 dbm.close()
 
-	
 #def saveOffices(offices):
 	# -- Get offices --
-
 #	for rec in db:
 #		office = rec['RN_NOMBRE']
 #		office = office.decode('Latin-1').encode('utf-8')
-		
+
 #		if not(office in offices):
 #			offices.append(office)
 #
 #	for item in offices:
 #		print item
 #	print
-
-def pushOffice():
-	pass
-
-def isInTable():
-	pass
