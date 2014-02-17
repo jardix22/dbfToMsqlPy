@@ -1,10 +1,11 @@
 # -*- coding: utf-8 -*-
 
 from model import Office, Prosecutor, Person, Crime, Arrest, Item
-
 from sqlalchemy import create_engine
 from sqlalchemy.orm import sessionmaker
 from sqlalchemy.orm.exc import NoResultFound
+from dbfpy import dbf
+
 
 class Offices(object):
     """docstring for Offices"""
@@ -120,10 +121,10 @@ class Arrests(object):
     def insert(self, arg):
         session = self.session
         try:
-            arrest = Arrest(person_id=arg['person_id'], prosecutor_id=arg['prosecutor_id'], crime_id=arg['crime_id'], arrest_date=arg['arrest_date'])
+            arrest = Arrest(person_id=arg['person_id'], prosecutor_id=arg['prosecutor_id'], crime_id=arg['crime_id'], arrest_date=arg['arrest_date'], office_id=arg['office_id'])
             session.add(arrest)
             session.commit()
-            return True
+            return "True:: ", arrest.id
 
         except Exception, e:
             print Exception
@@ -133,7 +134,7 @@ class Arrests(object):
 
 class Items(object):
     def __init__(self, session):
-        super(Offices, self).__init__()
+        super(Items, self).__init__()
         self.session = session
 
     def exist(self, arg):
@@ -141,16 +142,19 @@ class Items(object):
 
         query = session.query(Item).filter(Item.dbf_id == arg['dbf_id'], Item.office  == arg['office'], Item.register_date == arg['register_date'])
         query_exist = session.query(query.exists())
+
         return query_exist.scalar()
 
     def insert(self, arg):
+        session = self.session
         try:
-            new_office = Item(dbf_id=arg['dbf_id'], office=Item['office'], register_date=arg['register_date'])
-            session.add(new_office)
+            new_item = Item(dbf_id=arg['dbf_id'], office=arg['office'], register_date=arg['register_date'])
+            session.add(new_item)
             session.commit()
+
         except Exception, e:
-            raise e
             print Exception
+            raise
 
 class Pakages(object):
     """docstring for Pakages"""
@@ -165,11 +169,17 @@ class Pakages(object):
         return session
 
     def import_dbf(self):
-        session = self.connect_database()
+        # Load dbf file
+        db = dbf.Dbf("data/ok.DBF")
+        items = []
+        i = 0
 
         # Bucle of dbf rows
-
         # (1) Step - Offices & Prosecutors
+
+        session = self.connect_database()
+
+        items = Items(session)
         prosecutors = Prosecutors(session)
         offices = Offices(session)
         people = People(session)
@@ -177,21 +187,54 @@ class Pakages(object):
         arrests = Arrests(session)
 
         try:
+            for rec in db:
 
-            office_id = offices.insert(name="Oficina Opp")
-            prosecutor_id = prosecutors.insert(name="1° Fiscalia ", office_id=office_id)
-            person_id = people.insert({'names': 'joseph', 'father_name': 'asd', 'mother_name': 'asd', 'sex': 'F', 'grade': 'primaria', 'born_date': '2005-10-03'})
-            crime_id = crimes.insert(description="Robo")
+                rec['PE_ID'] = str(rec['PE_ID'])
+                rec['RN_NOMBRE'] = str(rec['RN_NOMBRE']).decode('Latin-1').encode('utf-8')
+                rec['DEN_PATERN'] = str(rec['DEN_PATERN']).decode('Latin-1').encode('utf-8')
+                rec['DEN_MATERN'] = str(rec['DEN_MATERN']).decode('Latin-1').encode('utf-8')
+                rec['DEN_NOMBRE'] = str(rec['DEN_NOMBRE']).decode('Latin-1').encode('utf-8')
+                rec['MID_FECHA'] = str(rec['MID_FECHA']).decode('Latin-1').encode('utf-8')
+                rec['DE_NOMBRE'] = str(rec['DE_NOMBRE']).decode('Latin-1').encode('utf-8')
+                rec['MPD_ID'] = str(rec['MPD_ID'])
+                rec['MPF_NOMBRE'] = str(rec['MPF_NOMBRE']).decode('Latin-1').encode('utf-8')
+                rec['PA_NOMBRE'] = str(rec['PA_NOMBRE']).decode('Latin-1').encode('utf-8')
+                rec['PE_GRADO'] = str(rec['PE_GRADO']).decode('Latin-1').encode('utf-8')
+                rec['PE_SEXO'] = str(rec['PE_SEXO']).decode('Latin-1').encode('utf-8')
+                rec['PE_FNACI'] = str(rec['PE_FNACI']).decode('Latin-1').encode('utf-8')
+                rec['MID_EDAD'] = str(rec['MID_EDAD']).decode('Latin-1').encode('utf-8')
 
-            # insert Arrest
-            result = arrests.insert({'person_id': int(person_id), 'prosecutor_id': int(prosecutor_id), 'crime_id': int(crime_id), 'arrest_date': '2005-10-03' })
+                # validate if row is inserted
+                arg = {'dbf_id': rec['PE_ID'], 'office': rec['RN_NOMBRE'], 'register_date': rec['MID_FECHA']}
 
-            print "office_id:" , office_id
-            print "prosecutor_id:", prosecutor_id
-            print "person_id:", person_id
-            print "crime_id:", crime_id
+                print "------------------------------------------------------ ID: ", rec['PE_ID']
 
-            print result
+                if not(items.exist(arg)):
+                    print "data: ", rec
+
+                    # arg['import_date'] =
+                    items.insert(arg)
+
+                    office_id = offices.insert(name=rec['RN_NOMBRE'])
+                    print "office_id:" , office_id
+
+                    prosecutor_id = prosecutors.insert(name=rec['MPF_NOMBRE'], office_id=office_id)
+                    print "prosecutor_id:", prosecutor_id
+
+                    person_id = people.insert({'names': rec['DEN_NOMBRE'], 'father_name': rec['DEN_MATERN'], 'mother_name': rec['DEN_PATERN'], 'sex': rec['PE_SEXO'], 'grade': rec['PE_GRADO'], 'born_date': rec['PE_FNACI']})
+                    print "person_id:", person_id
+
+                    crime_id = crimes.insert(description=rec['DE_NOMBRE'])
+                    print "crime_id:", crime_id
+
+                    # insert Arrest
+                    result = arrests.insert({'person_id': int(person_id), 'prosecutor_id': int(prosecutor_id), 'crime_id': int(crime_id), 'arrest_date': rec['MID_FECHA'], 'office_id': int(office_id) })
+                    print result
+
+                    i = i + 1
+
+                    if i == 1000000:
+                        break
 
         except:
             session.rollback()

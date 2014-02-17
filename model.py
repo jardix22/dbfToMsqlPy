@@ -32,6 +32,7 @@ class Arrest(Base):
     person_id = Column(Integer, ForeignKey('people.id'))
     prosecutor_id = Column(Integer, ForeignKey('prosecutors.id'))
     crime_id = Column(Integer, ForeignKey('crimes.id'))
+    office_id = Column(Integer, ForeignKey('offices.id'))
 
 # -- Crime Model --
 class Crime(Base):
